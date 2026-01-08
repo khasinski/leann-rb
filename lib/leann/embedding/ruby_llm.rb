@@ -16,8 +16,7 @@ module Leann
     class RubyLLM < Base
       # @param model [String, nil] Embedding model (uses RubyLLM default if nil)
       def initialize(model: nil)
-        super()
-        @model = model
+        super(model: model)
 
         unless defined?(::RubyLLM)
           raise ConfigurationError, "RubyLLM gem is required. Add 'ruby_llm' to your Gemfile."

@@ -9,3 +9,9 @@
 
 # rspec failure tracking
 .rspec_status
+
+# Test Rails app
+/test_app/
+
+# Index files created during testing
+*.leann*

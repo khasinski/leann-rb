@@ -13,7 +13,7 @@ class CreateLeannTables < ActiveRecord::Migration<%= "[#{ActiveRecord::Migration
     end
 
     create_table :leann_passages do |t|
-      t.references :leann_index, null: false, foreign_key: { on_delete: :cascade }
+      t.references :leann_index, null: false, foreign_key: { to_table: :leann_indexes, on_delete: :cascade }
       t.string :external_id, null: false
       t.text :text, null: false
       t.text :metadata  # JSON: stores user-defined metadata
