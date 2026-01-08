@@ -1,0 +1,167 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "leann"
+
+# Simple CLI for LEANN
+class CLI
+  COMMANDS = {
+    "build" => "Build an index from files",
+    "search" => "Search an index",
+    "ask" => "Ask a question (RAG)",
+    "info" => "Show index information",
+    "list" => "List all indexes",
+    "delete" => "Delete an index",
+    "help" => "Show this help"
+  }.freeze
+
+  def run(args)
+    command = args.shift || "help"
+
+    case command
+    when "build"
+      build(args)
+    when "search"
+      search(args)
+    when "ask"
+      ask(args)
+    when "info"
+      info(args)
+    when "list"
+      list_indexes
+    when "delete"
+      delete(args)
+    when "help", "--help", "-h"
+      help
+    when "--version", "-v"
+      puts "leann #{Leann::VERSION}"
+    else
+      puts "Unknown command: #{command}"
+      puts "Run 'leann help' for usage."
+      exit 1
+    end
+  end
+
+  private
+
+  def build(args)
+    if args.empty?
+      puts "Usage: leann build <name> <directory>"
+      puts "Example: leann build docs ./docs"
+      exit 1
+    end
+
+    name = args.shift
+    directory = args.shift || "."
+    extensions = %w[.md .txt .rb .py .js .ts]
+
+    puts "Building index '#{name}' from #{directory}..."
+
+    Leann.build(name) do
+      add_directory directory, extensions: extensions
+    end
+
+    puts "Done!"
+  end
+
+  def search(args)
+    if args.size < 2
+      puts "Usage: leann search <index> <query>"
+      puts "Example: leann search docs 'authentication'"
+      exit 1
+    end
+
+    name = args.shift
+    query = args.join(" ")
+
+    results = Leann.search(name, query, limit: 5)
+
+    if results.empty?
+      puts "No results found."
+    else
+      puts results.to_s
+    end
+  end
+
+  def ask(args)
+    if args.size < 2
+      puts "Usage: leann ask <index> <question>"
+      puts "Example: leann ask docs 'How do I authenticate?'"
+      exit 1
+    end
+
+    name = args.shift
+    question = args.join(" ")
+
+    puts "Searching for context..."
+    answer = Leann.ask(name, question)
+    puts
+    puts answer
+  end
+
+  def info(args)
+    if args.empty?
+      puts "Usage: leann info <index>"
+      exit 1
+    end
+
+    name = args.first
+    index = Leann.open(name)
+    puts index.to_s
+  end
+
+  def list_indexes
+    indexes = Leann.list
+    if indexes.empty?
+      puts "No indexes found."
+    else
+      puts "Indexes:"
+      indexes.each { |i| puts "  - #{i}" }
+    end
+  end
+
+  def delete(args)
+    if args.empty?
+      puts "Usage: leann delete <index>"
+      exit 1
+    end
+
+    name = args.first
+    print "Delete index '#{name}'? [y/N] "
+    confirm = $stdin.gets.strip.downcase
+
+    if confirm == "y"
+      Leann.delete(name)
+      puts "Deleted."
+    else
+      puts "Cancelled."
+    end
+  end
+
+  def help
+    puts <<~HELP
+      LEANN - Lightweight vector search and RAG for Ruby
+
+      Usage: leann <command> [options]
+
+      Commands:
+    HELP
+
+    COMMANDS.each do |cmd, desc|
+      puts "  #{cmd.ljust(10)} #{desc}"
+    end
+
+    puts <<~EXAMPLES
+
+      Examples:
+        leann build docs ./documentation
+        leann search docs "authentication"
+        leann ask docs "How do I set up OAuth?"
+        leann info docs
+        leann list
+        leann delete docs
+    EXAMPLES
+  end
+end
+
+CLI.new.run(ARGV)
