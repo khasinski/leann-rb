@@ -120,6 +120,9 @@ module Leann
       when :ollama
         require_relative "embedding/ollama"
         Embedding::Ollama.new(model: index.embedding_model)
+      when :fastembed
+        require_relative "embedding/fastembed"
+        Embedding::FastEmbed.new(model: index.embedding_model)
       else
         raise ConfigurationError, "Unknown embedding provider: #{index.embedding_provider}"
       end

@@ -25,7 +25,7 @@ module Leann
       attr_reader :documents
 
       # @param name [String] Index name (must be unique)
-      # @param embedding [Symbol] Embedding provider (:ruby_llm, :openai, :ollama)
+      # @param embedding [Symbol] Embedding provider (:ruby_llm, :openai, :ollama, :fastembed)
       # @param model [String, nil] Embedding model name
       # @param force [Boolean] Overwrite existing index
       def initialize(name, embedding: nil, model: nil, force: false)
@@ -193,6 +193,9 @@ module Leann
         when :ollama
           require "leann/embedding/ollama"
           Leann::Embedding::Ollama.new(model: @embedding_model)
+        when :fastembed
+          require "leann/embedding/fastembed"
+          Leann::Embedding::FastEmbed.new(model: @embedding_model)
         else
           raise Leann::ConfigurationError, "Unknown embedding provider: #{@embedding_provider}"
         end

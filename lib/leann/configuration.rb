@@ -17,7 +17,7 @@ module Leann
   #   end
   #
   class Configuration
-    # Embedding provider (:ruby_llm, :openai, :ollama)
+    # Embedding provider (:ruby_llm, :openai, :ollama, :fastembed)
     # Defaults to :ruby_llm if RubyLLM gem is available, otherwise :openai
     # @return [Symbol]
     attr_accessor :embedding_provider
@@ -81,6 +81,12 @@ module Leann
       defined?(::RubyLLM) || gem_available?("ruby_llm")
     end
 
+    # Check if FastEmbed gem is available
+    # @return [Boolean]
+    def fastembed_available?
+      defined?(::Fastembed) || gem_available?("fastembed")
+    end
+
     # Validate configuration
     # @raise [ConfigurationError] if configuration is invalid
     def validate!
@@ -93,6 +99,10 @@ module Leann
         raise ConfigurationError, "OpenAI API key is required" if openai_api_key.nil? || openai_api_key.empty?
       when :ollama
         # Ollama doesn't require API key, just needs to be running
+      when :fastembed
+        unless fastembed_available?
+          raise ConfigurationError, "FastEmbed gem is required. Add 'fastembed' to your Gemfile."
+        end
       else
         raise ConfigurationError, "Unknown embedding provider: #{embedding_provider}"
       end
@@ -114,6 +124,8 @@ module Leann
         "text-embedding-3-small"
       when :ollama
         "nomic-embed-text"
+      when :fastembed
+        "BAAI/bge-small-en-v1.5"
       else
         @default_embedding_model
       end

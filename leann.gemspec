@@ -13,6 +13,7 @@ Gem::Specification.new do |spec|
     LEANN (Lightweight Embedding-Aware Neural Neighbor) is a Ruby gem for
     building and searching vector indexes with minimal storage. It provides
     semantic search and RAG capabilities with a beautiful, simple API.
+    Supports multiple embedding providers: RubyLLM, OpenAI, Ollama, and FastEmbed.
   DESC
   spec.homepage      = "https://github.com/khasinski/leann-rb"
   spec.license       = "MIT"
@@ -37,6 +38,10 @@ Gem::Specification.new do |spec|
 
   # Runtime dependencies
   spec.add_dependency "hnswlib", "~> 0.9"    # HNSW vector search
+
+  # Optional embedding providers (add to your Gemfile as needed):
+  # gem 'ruby_llm'   - Unified API for multiple providers (recommended)
+  # gem 'fastembed'  - Fast local embeddings via ONNX Runtime
 
   # Development dependencies
   spec.add_development_dependency "bundler", ">= 1.17"

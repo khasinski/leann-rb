@@ -244,7 +244,7 @@ puts results.combined_text  # All texts joined
 ```ruby
 Leann.configure do |config|
   # Embedding provider (defaults to :ruby_llm if available, otherwise :openai)
-  config.embedding_provider = :ruby_llm  # :ruby_llm, :openai, or :ollama
+  config.embedding_provider = :ruby_llm  # :ruby_llm, :openai, :ollama, or :fastembed
 
   # Provider-specific settings (only needed if not using RubyLLM)
   config.openai_api_key = "sk-..."
@@ -334,8 +334,34 @@ end
 | **RubyLLM** (default) | `gem 'ruby_llm'` | Unified API, multiple backends |
 | **OpenAI** | `OPENAI_API_KEY` | Direct API access |
 | **Ollama** | [Install Ollama](https://ollama.com) | Local, privacy-first |
+| **FastEmbed** | `gem 'fastembed'` | Fast local, no server needed |
 
 When RubyLLM is present, LEANN uses it automatically. This gives you access to all embedding providers RubyLLM supports (OpenAI, Ollama, and more) through a single configuration.
+
+### FastEmbed (Local, Serverless)
+
+FastEmbed provides fast local embeddings using ONNX Runtime - no API keys or running servers required:
+
+```ruby
+gem 'fastembed'
+```
+
+```ruby
+Leann.configure do |config|
+  config.embedding_provider = :fastembed
+end
+
+# Or specify model explicitly
+Leann.build("index", embedding: :fastembed, model: "BAAI/bge-small-en-v1.5") do
+  add "Your documents here..."
+end
+```
+
+**Supported models:**
+- `BAAI/bge-small-en-v1.5` (384 dim, default) - Fast English
+- `BAAI/bge-base-en-v1.5` (768 dim) - Higher accuracy English
+- `intfloat/multilingual-e5-small` (384 dim) - 100+ languages
+- `nomic-ai/nomic-embed-text-v1.5` (768 dim) - Long context (8192 tokens)
 
 ## Requirements
 
