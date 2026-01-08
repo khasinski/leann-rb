@@ -1,0 +1,28 @@
+# frozen_string_literal: true
+
+class CreateLeannTables < ActiveRecord::Migration<%= "[#{ActiveRecord::Migration.current_version}]" rescue "[7.0]" %>
+  def change
+    create_table :leann_indexes do |t|
+      t.string :name, null: false, index: { unique: true }
+      t.string :embedding_provider, null: false
+      t.string :embedding_model
+      t.integer :dimensions, null: false
+      t.text :config  # JSON: stores hnsw_m, hnsw_ef_construction, entry_point_id, max_level
+
+      t.timestamps
+    end
+
+    create_table :leann_passages do |t|
+      t.references :leann_index, null: false, foreign_key: { on_delete: :cascade }
+      t.string :external_id, null: false
+      t.text :text, null: false
+      t.text :metadata  # JSON: stores user-defined metadata
+      t.text :neighbors # JSON: stores neighbor IDs for graph traversal
+
+      t.timestamps
+    end
+
+    add_index :leann_passages, [:leann_index_id, :external_id], unique: true
+    add_index :leann_passages, :external_id
+  end
+end

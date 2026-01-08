@@ -257,6 +257,76 @@ Leann.configure do |config|
 end
 ```
 
+## Rails Integration
+
+LEANN provides ActiveRecord integration for storing indexes in your database instead of files.
+
+### Setup
+
+```bash
+# Generate the migration
+rails generate leann:install
+rails db:migrate
+```
+
+This creates two tables:
+- `leann_indexes` - Stores index metadata and graph configuration
+- `leann_passages` - Stores documents with their text, metadata, and graph neighbors
+
+### Usage
+
+```ruby
+require "leann/rails"
+
+# Build an index (stored in database)
+Leann::Rails.build("products") do
+  add "Red running shoes for athletes", category: "shoes", price: 89.99
+  add "Blue denim jeans, slim fit", category: "pants", price: 59.99
+  add "White cotton t-shirt", category: "tops", price: 24.99
+end
+
+# Search
+results = Leann::Rails.search("products", "comfortable footwear")
+results.each { |r| puts "#{r.score.round(3)}: #{r.text}" }
+
+# Other operations
+Leann::Rails.exists?("products")  # => true
+Leann::Rails.list                  # => ["products"]
+Leann::Rails.delete("products")    # => true
+```
+
+### In Controllers
+
+```ruby
+class SearchController < ApplicationController
+  def index
+    @results = Leann::Rails.search("products", params[:q], limit: 10)
+  end
+end
+```
+
+### With ActiveRecord Models
+
+```ruby
+# Direct access to index records
+index = Leann::Rails::Index.find_by(name: "products")
+index.document_count  # => 3
+index.search("shoes") # Search directly on the index
+
+# Access passages
+index.passages.each do |passage|
+  puts passage.text
+  puts passage.metadata
+end
+```
+
+### Benefits of Database Storage
+
+- **Transactions**: Index updates are ACID-compliant
+- **Backups**: Indexes are included in database backups
+- **Scaling**: Use read replicas for search-heavy workloads
+- **Deployment**: No need to manage separate index files
+
 ## Embedding Providers
 
 | Provider | Setup | Best For |
