@@ -3,12 +3,11 @@
 # Mock RubyLLM classes for testing without the actual gem
 module RubyLLM
   class Tool
-    def initialize; end
   end
 
   class Schema
-    def initialize(&block)
-      instance_eval(&block) if block_given?
+    def initialize(&)
+      instance_eval(&) if block_given?
     end
 
     def string(name, **options); end
@@ -74,13 +73,13 @@ RSpec.describe Leann::RubyLLM::Search do
       it "returns search results" do
         # Mock the search to avoid needing real embeddings
         allow(Leann).to receive(:search).and_return([
-          Leann::SearchResult.new(
-            id: "1",
-            text: "Ruby is a dynamic programming language.",
-            score: 0.95,
-            metadata: {}
-          )
-        ])
+                                                      Leann::SearchResult.new(
+                                                        id: "1",
+                                                        text: "Ruby is a dynamic programming language.",
+                                                        score: 0.95,
+                                                        metadata: {}
+                                                      )
+                                                    ])
 
         result = tool.execute(query: "dynamic language")
 

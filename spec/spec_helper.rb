@@ -30,9 +30,9 @@ VCR.configure do |config|
   config.ignore_localhost = true
 
   # Filter sensitive data
-  config.filter_sensitive_data("<OPENAI_API_KEY>") { ENV["OPENAI_API_KEY"] }
-  config.filter_sensitive_data("<OPENROUTER_API_KEY>") { ENV["OPENROUTER_API_KEY"] }
-  config.filter_sensitive_data("<ANTHROPIC_API_KEY>") { ENV["ANTHROPIC_API_KEY"] }
+  config.filter_sensitive_data("<OPENAI_API_KEY>") { ENV.fetch("OPENAI_API_KEY", nil) }
+  config.filter_sensitive_data("<OPENROUTER_API_KEY>") { ENV.fetch("OPENROUTER_API_KEY", nil) }
+  config.filter_sensitive_data("<ANTHROPIC_API_KEY>") { ENV.fetch("ANTHROPIC_API_KEY", nil) }
 
   # Record mode: :new_episodes records new requests, :none plays back only
   config.default_cassette_options = {
@@ -76,6 +76,15 @@ RSpec.configure do |config|
     Leann.instance_variable_set(:@configuration, nil)
   end
 
+  # Silence library progress output during specs
+  config.before(:suite) do
+    Leann.configure { |c| c.verbose = false }
+  end
+
+  config.before(:each) do
+    Leann.configuration.verbose = false
+  end
+
   # Tag for integration tests that need real API
   config.define_derived_metadata(file_path: %r{/integration/}) do |metadata|
     metadata[:integration] = true
@@ -84,7 +93,7 @@ end
 
 # Helper to check if we have API keys
 def has_openai_key?
-  ENV["OPENAI_API_KEY"] && !ENV["OPENAI_API_KEY"].empty?
+  ENV.fetch("OPENAI_API_KEY", nil) && !ENV["OPENAI_API_KEY"].empty?
 end
 
 def has_ollama?

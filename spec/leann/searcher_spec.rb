@@ -163,10 +163,10 @@ RSpec.describe Leann::Searcher do
       end
 
       it "filters by array of values" do
-        results = searcher.search("query", limit: 10, filters: { category: ["web", "systems"] })
+        results = searcher.search("query", limit: 10, filters: { category: %w[web systems] })
 
         results.each do |result|
-          expect(["web", "systems"]).to include(result.metadata[:category])
+          expect(%w[web systems]).to include(result.metadata[:category])
         end
       end
 

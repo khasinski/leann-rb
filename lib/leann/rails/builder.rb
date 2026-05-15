@@ -137,7 +137,7 @@ module Leann
       def save
         raise Leann::EmptyIndexError if empty?
 
-        puts "Building index '#{name}' with #{count} documents..."
+        Leann.log("Building index '#{name}' with #{count} documents...")
 
         # Delete existing if force mode
         Index.find_by(name: name)&.destroy if @force
@@ -161,7 +161,7 @@ module Leann
         backend = ActiveRecordBackend.new(index)
         backend.build(@documents, embeddings)
 
-        puts "Index '#{name}' created successfully!"
+        Leann.log("Index '#{name}' created successfully!")
 
         index
       end
@@ -179,7 +179,7 @@ module Leann
       end
 
       def embedding_provider
-        @_embedding_provider ||= load_embedding_provider
+        @_embedding_provider ||= load_embedding_provider # rubocop:disable Naming/MemoizedInstanceVariableName
       end
 
       def load_embedding_provider

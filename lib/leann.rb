@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "logger"
+
 require_relative "leann/version"
 require_relative "leann/configuration"
 require_relative "leann/errors"
@@ -72,9 +74,9 @@ module Leann
     #   end
     #
     # @return [Index] The built index
-    def build(name, **options, &block)
+    def build(name, **options, &)
       builder = Builder.new(name, **options)
-      builder.instance_eval(&block) if block_given?
+      builder.instance_eval(&) if block_given?
       builder.save
     end
 
@@ -128,6 +130,33 @@ module Leann
     # @return [Boolean] true if deleted
     def delete(name)
       Index.delete(name)
+    end
+
+    # Logger used for library progress output. Defaults to a stdout Logger.
+    # @return [Logger]
+    def logger
+      configuration.logger ||= default_logger
+    end
+
+    # Emit an informational message if verbose mode is on.
+    # @param message [String]
+    def log(message)
+      return unless configuration.verbose
+
+      if logger.respond_to?(:info)
+        logger.info(message)
+      else
+        logger.puts(message)
+      end
+    end
+
+    private
+
+    def default_logger
+      Logger.new($stdout).tap do |log|
+        log.level = Logger::INFO
+        log.formatter = ->(_sev, _time, _prog, msg) { "#{msg}\n" }
+      end
     end
   end
 end

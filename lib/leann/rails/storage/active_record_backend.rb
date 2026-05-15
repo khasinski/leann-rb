@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "set"
+
 module Leann
   module Rails
     # ActiveRecord-based storage backend for LEANN graphs
@@ -28,7 +30,7 @@ module Leann
       def build(documents, embeddings)
         return if documents.empty?
 
-        puts "Building LEANN graph with #{documents.size} nodes (M=#{@m})..."
+        Leann.log("Building LEANN graph with #{documents.size} nodes (M=#{@m})...")
 
         # Build in-memory graph first using the core algorithm
         graph = build_graph(documents, embeddings)
@@ -39,7 +41,7 @@ module Leann
         # Store graph metadata in the index
         update_index_metadata(graph)
 
-        puts "Graph built and stored in database: #{documents.size} passages"
+        Leann.log("Graph built and stored in database: #{documents.size} passages")
       end
 
       # Search the graph
@@ -101,9 +103,7 @@ module Leann
       def random_level
         level = 0
         ml = 1.0 / Math.log(@m)
-        while rand < Math.exp(-level / ml) && level < 16
-          level += 1
-        end
+        level += 1 while rand < Math.exp(-level / ml) && level < 16
         level
       end
 
@@ -111,7 +111,7 @@ module Leann
         current = entry_point
 
         # Traverse from top to node's level
-        (max_level).downto(node_level + 1) do |level|
+        max_level.downto(node_level + 1) do |level|
           current = greedy_search_level(graph, new_embedding, current, level)
         end
 
@@ -156,11 +156,11 @@ module Leann
             next unless graph[neighbor]
 
             dist = cosine_distance(query, graph[neighbor][:embedding])
-            if dist < current_dist
-              current = neighbor
-              current_dist = dist
-              changed = true
-            end
+            next unless dist < current_dist
+
+            current = neighbor
+            current_dist = dist
+            changed = true
           end
 
           break unless changed
@@ -188,12 +188,12 @@ module Leann
             visited << neighbor
             dist = cosine_distance(query, graph[neighbor][:embedding])
 
-            if results.size < ef || dist < results.last.first
-              candidates << [dist, neighbor]
-              results << [dist, neighbor]
-              results.sort_by!(&:first)
-              results.pop if results.size > ef
-            end
+            next unless results.size < ef || dist < results.last.first
+
+            candidates << [dist, neighbor]
+            results << [dist, neighbor]
+            results.sort_by!(&:first)
+            results.pop if results.size > ef
           end
         end
 
@@ -221,7 +221,7 @@ module Leann
           norm_b += b[i] * b[i]
         end
 
-        similarity = dot / (Math.sqrt(norm_a) * Math.sqrt(norm_b) + 1e-10)
+        similarity = dot / ((Math.sqrt(norm_a) * Math.sqrt(norm_b)) + 1e-10)
         1.0 - similarity
       end
 
@@ -259,7 +259,7 @@ module Leann
         )
       end
 
-      def search_hnsw(query_embedding, entry_point_id, max_level, ef, embedding_provider, passages, limit)
+      def search_hnsw(query_embedding, entry_point_id, _max_level, ef, embedding_provider, passages, limit)
         # Load passages with neighbors
         passage_map = @index.passages.index_by(&:external_id)
 
@@ -312,12 +312,12 @@ module Leann
 
             neighbor_dist = cosine_distance(query_embedding, neighbor_embedding)
 
-            if results.size < ef || neighbor_dist < results.last.first
-              candidates << [neighbor_dist, neighbor_id]
-              results << [neighbor_dist, neighbor_id]
-              results.sort_by!(&:first)
-              results.pop if results.size > ef
-            end
+            next unless results.size < ef || neighbor_dist < results.last.first
+
+            candidates << [neighbor_dist, neighbor_id]
+            results << [neighbor_dist, neighbor_id]
+            results.sort_by!(&:first)
+            results.pop if results.size > ef
           end
         end
 

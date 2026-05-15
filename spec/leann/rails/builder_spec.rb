@@ -40,7 +40,15 @@ module ActiveRecord
       end
 
       def pluck(*columns)
-        @records&.map { |r| columns.size == 1 ? r.instance_variable_get("@#{columns[0]}") : columns.map { |c| r.instance_variable_get("@#{c}") } } || []
+        @records&.map do |r|
+          if columns.size == 1
+            r.instance_variable_get("@#{columns[0]}")
+          else
+            columns.map do |c|
+              r.instance_variable_get("@#{c}")
+            end
+          end
+        end || []
       end
 
       def insert_all(records)
@@ -80,11 +88,13 @@ module ActiveRecord
 end
 
 # Add Time.current method for Rails compatibility
-class << Time
-  def current
-    now
+unless Time.respond_to?(:current)
+  class << Time
+    def current
+      now
+    end
   end
-end unless Time.respond_to?(:current)
+end
 
 # Now require Rails integration
 require_relative "../../../lib/leann/rails"
@@ -221,7 +231,7 @@ RSpec.describe Leann::Rails::Builder do
       index = builder.save
       passages = index.passages
 
-      expect(passages.map { |p| p.text }).to include("First doc", "Second doc")
+      expect(passages.map(&:text)).to include("First doc", "Second doc")
     end
   end
 

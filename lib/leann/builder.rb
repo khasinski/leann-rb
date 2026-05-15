@@ -165,7 +165,7 @@ module Leann
     def save
       raise EmptyIndexError if empty?
 
-      puts "Building index '#{name}' with #{count} documents..."
+      Leann.log("Building index '#{name}' with #{count} documents...")
 
       # Create directory if needed
       FileUtils.mkdir_p(File.dirname(path))
@@ -185,7 +185,7 @@ module Leann
       # Save metadata
       save_metadata(embeddings)
 
-      puts "Index '#{name}' created successfully!"
+      Leann.log("Index '#{name}' created successfully!")
 
       Index.open(path)
     end
@@ -194,11 +194,17 @@ module Leann
     private
 
     def resolve_path(name, custom_path)
-      if custom_path
-        custom_path.end_with?(Index::INDEX_EXTENSION) ? custom_path : "#{custom_path}#{Index::INDEX_EXTENSION}"
-      else
-        "#{name}#{Index::INDEX_EXTENSION}"
-      end
+      base =
+        if custom_path
+          custom_path
+        elsif name.include?(File::SEPARATOR) || name.start_with?(".")
+          name
+        else
+          dir = Leann.configuration.index_directory
+          dir && !dir.empty? ? File.join(dir, name) : name
+        end
+
+      base.end_with?(Index::INDEX_EXTENSION) ? base : "#{base}#{Index::INDEX_EXTENSION}"
     end
 
     def check_existing_index
@@ -215,7 +221,7 @@ module Leann
     end
 
     def embedding_provider
-      @_embedding_provider ||= load_embedding_provider
+      @_embedding_provider ||= load_embedding_provider # rubocop:disable Naming/MemoizedInstanceVariableName
     end
 
     def load_embedding_provider
@@ -273,14 +279,14 @@ module Leann
     end
 
     def report_storage_savings(embeddings)
-      embedding_size = embeddings.first.size * 4  # float32
+      embedding_size = embeddings.first.size * 4 # float32
       total_embedding_bytes = embeddings.length * embedding_size
 
       graph_file = "#{path}.graph.bin"
       actual_size = File.exist?(graph_file) ? File.size(graph_file) : 0
 
       savings = ((total_embedding_bytes - actual_size).to_f / total_embedding_bytes * 100).round(1)
-      puts "Storage savings: #{savings}% (#{format_bytes(total_embedding_bytes)} → #{format_bytes(actual_size)})"
+      Leann.log("Storage savings: #{savings}% (#{format_bytes(total_embedding_bytes)} -> #{format_bytes(actual_size)})")
     end
 
     def format_bytes(bytes)

@@ -36,7 +36,7 @@ RSpec.describe "LEANN Backend Integration", :integration do
         graph_size = File.size("#{index_name}.leann.graph.bin")
         # With 5 documents, ~384 dimensions, embeddings would be ~7680 bytes (5 * 384 * 4)
         # Graph should be significantly smaller (just neighbor lists)
-        expect(graph_size).to be < 5000  # Graph should be under 5KB for 5 docs
+        expect(graph_size).to be < 5000 # Graph should be under 5KB for 5 docs
 
         # Search (this recomputes embeddings on-the-fly)
         results = Leann.search(index_name, "dynamic programming language")

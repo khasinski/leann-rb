@@ -22,20 +22,15 @@ RSpec.describe Leann::Configuration do
       expect(config.hnsw_ef_construction).to eq(200)
     end
 
-    it "sets default chunk parameters" do
-      expect(config.chunk_size).to eq(512)
-      expect(config.chunk_overlap).to eq(64)
-    end
-
     it "reads API key from environment" do
-      expect(config.openai_api_key).to eq(ENV["OPENAI_API_KEY"])
+      expect(config.openai_api_key).to eq(ENV.fetch("OPENAI_API_KEY", nil))
     end
   end
 
   describe "#ruby_llm_available?" do
     it "detects RubyLLM availability" do
       # Just check it returns a truthy/falsy value
-      expect(config.ruby_llm_available?).to eq(defined?(::RubyLLM) ? true : false).or be_truthy.or be_falsy
+      expect(config.ruby_llm_available?).to eq(defined?(RubyLLM) ? true : false).or be_truthy.or be_falsy
     end
   end
 

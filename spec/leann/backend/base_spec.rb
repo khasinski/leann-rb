@@ -13,26 +13,26 @@ RSpec.describe Leann::Backend::Base do
   describe "#build" do
     it "raises NotImplementedError" do
       backend = described_class.new(dimensions: 1536)
-      expect {
+      expect do
         backend.build([], [], "test")
-      }.to raise_error(NotImplementedError, /Subclasses must implement #build/)
+      end.to raise_error(NotImplementedError, /Subclasses must implement #build/)
     end
   end
 
   describe "#search" do
     it "raises NotImplementedError" do
       backend = described_class.new(dimensions: 1536)
-      expect {
+      expect do
         backend.search([0.1, 0.2], limit: 5)
-      }.to raise_error(NotImplementedError, /Subclasses must implement #search/)
+      end.to raise_error(NotImplementedError, /Subclasses must implement #search/)
     end
   end
 
   describe ".load" do
     it "raises NotImplementedError" do
-      expect {
+      expect do
         described_class.load("test")
-      }.to raise_error(NotImplementedError, /Subclasses must implement .load/)
+      end.to raise_error(NotImplementedError, /Subclasses must implement .load/)
     end
   end
 end

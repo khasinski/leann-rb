@@ -53,10 +53,8 @@ module Leann
       # @param items [Array]
       # @param batch_size [Integer]
       # @yield [Array] Each batch
-      def in_batches(items, batch_size)
-        items.each_slice(batch_size) do |batch|
-          yield batch
-        end
+      def in_batches(items, batch_size, &)
+        items.each_slice(batch_size, &)
       end
     end
   end

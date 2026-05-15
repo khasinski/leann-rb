@@ -3,7 +3,7 @@
 require_relative "../../leann"
 
 # Only require ruby_llm if not already defined (allows mocking in tests)
-unless defined?(::RubyLLM::Tool)
+unless defined?(RubyLLM::Tool)
   begin
     require "ruby_llm"
   rescue LoadError

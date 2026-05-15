@@ -33,7 +33,7 @@ module Leann
         model ||= DEFAULT_MODEL
         super(model: model)
 
-        @cache_dir = cache_dir || ENV["FASTEMBED_CACHE_PATH"]
+        @cache_dir = cache_dir || ENV.fetch("FASTEMBED_CACHE_PATH", nil)
         @threads = threads
         @client = nil
 
@@ -52,10 +52,9 @@ module Leann
         in_batches(texts, MAX_BATCH_SIZE) do |batch|
           batch_embeddings = compute_batch(batch)
           all_embeddings.concat(batch_embeddings)
-          print "." # Progress indicator
         end
 
-        puts " Done! (#{all_embeddings.size} embeddings)" unless texts.size < MAX_BATCH_SIZE
+        Leann.log("Embedded #{all_embeddings.size} texts via FastEmbed.") if texts.size >= MAX_BATCH_SIZE
 
         # FastEmbed returns normalized vectors by default
         all_embeddings
@@ -70,17 +69,17 @@ module Leann
       private
 
       def check_gem!
-        unless defined?(::Fastembed)
-          raise ConfigurationError, <<~MSG
-            FastEmbed gem is required for local embeddings.
+        return if defined?(::Fastembed)
 
-            Add to your Gemfile:
-              gem 'fastembed'
+        raise ConfigurationError, <<~MSG
+          FastEmbed gem is required for local embeddings.
 
-            Or install directly:
-              gem install fastembed
-          MSG
-        end
+          Add to your Gemfile:
+            gem 'fastembed'
+
+          Or install directly:
+            gem install fastembed
+        MSG
       end
 
       def client

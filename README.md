@@ -254,6 +254,15 @@ Leann.configure do |config|
   # Index settings
   config.hnsw_m = 16                         # Graph connectivity
   config.hnsw_ef_construction = 200          # Build quality
+
+  # Where indexes live on disk. Defaults to the current working directory; set this
+  # to keep indexes in a single folder. Index names with a `/` or leading `.` are
+  # always treated as explicit paths and bypass this setting.
+  config.index_directory = "tmp/leann_indexes"
+
+  # Logging
+  config.verbose = false       # Silence progress output
+  config.logger  = Rails.logger if defined?(Rails)
 end
 ```
 

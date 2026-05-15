@@ -36,7 +36,7 @@ module Leann
 
     # Default embedding model
     # @return [String]
-    attr_accessor :default_embedding_model
+    attr_reader :default_embedding_model
 
     # Index storage directory
     # @return [String]
@@ -50,29 +50,29 @@ module Leann
     # @return [Integer]
     attr_accessor :hnsw_ef_construction
 
-    # Default chunk size for text splitting
-    # @return [Integer]
-    attr_accessor :chunk_size
+    # Whether the library should print progress to the configured logger.
+    # @return [Boolean]
+    attr_accessor :verbose
 
-    # Default chunk overlap
-    # @return [Integer]
-    attr_accessor :chunk_overlap
+    # Logger used for progress and informational output.
+    # @return [Logger, IO, #info]
+    attr_accessor :logger
 
     def initialize
       # Default to RubyLLM if available, otherwise OpenAI
       @embedding_provider = ruby_llm_available? ? :ruby_llm : :openai
 
-      @openai_api_key = ENV["OPENAI_API_KEY"]
-      @openai_base_url = ENV["OPENAI_BASE_URL"]
+      @openai_api_key = ENV.fetch("OPENAI_API_KEY", nil)
+      @openai_base_url = ENV.fetch("OPENAI_BASE_URL", nil)
       @ollama_host = ENV.fetch("OLLAMA_HOST", "http://localhost:11434")
-      @default_embedding_model = nil  # Let provider choose default
+      @default_embedding_model = nil # Let provider choose default
 
-      @index_directory = ".leann"
+      @index_directory = nil
       @hnsw_m = 32
       @hnsw_ef_construction = 200
 
-      @chunk_size = 512
-      @chunk_overlap = 64
+      @verbose = true
+      @logger = nil
     end
 
     # Check if RubyLLM gem is available
@@ -92,9 +92,7 @@ module Leann
     def validate!
       case embedding_provider
       when :ruby_llm
-        unless ruby_llm_available?
-          raise ConfigurationError, "RubyLLM gem is required. Add 'ruby_llm' to your Gemfile."
-        end
+        raise ConfigurationError, "RubyLLM gem is required. Add 'ruby_llm' to your Gemfile." unless ruby_llm_available?
       when :openai
         raise ConfigurationError, "OpenAI API key is required" if openai_api_key.nil? || openai_api_key.empty?
       when :ollama
@@ -119,7 +117,7 @@ module Leann
       # Provider-specific defaults
       case provider
       when :ruby_llm
-        nil  # RubyLLM uses its own configured default
+        nil # RubyLLM uses its own configured default
       when :openai
         "text-embedding-3-small"
       when :ollama

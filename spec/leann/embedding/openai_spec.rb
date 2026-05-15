@@ -51,19 +51,24 @@ RSpec.describe Leann::Embedding::OpenAI do
     end
 
     it "uses api_key from ENV" do
+      original = ENV.delete("OPENAI_API_KEY")
+      ENV["OPENAI_API_KEY"] = "env-key"
       Leann.configure { |c| c.openai_api_key = nil }
-      allow(ENV).to receive(:[]).with("OPENAI_API_KEY").and_return("env-key")
       provider = described_class.new
       expect(provider.instance_variable_get(:@api_key)).to eq("env-key")
+    ensure
+      ENV["OPENAI_API_KEY"] = original
     end
 
     it "raises ConfigurationError without API key" do
+      original = ENV.delete("OPENAI_API_KEY")
       Leann.configure { |c| c.openai_api_key = nil }
-      allow(ENV).to receive(:[]).with("OPENAI_API_KEY").and_return(nil)
 
-      expect {
+      expect do
         described_class.new
-      }.to raise_error(Leann::ConfigurationError, /API key is required/)
+      end.to raise_error(Leann::ConfigurationError, /API key is required/)
+    ensure
+      ENV["OPENAI_API_KEY"] = original
     end
 
     it "allows custom base_url" do
@@ -96,19 +101,19 @@ RSpec.describe Leann::Embedding::OpenAI do
     end
 
     it "makes request to OpenAI API" do
-      provider.compute(["Hello", "World"])
+      provider.compute(%w[Hello World])
 
       expect(WebMock).to have_requested(:post, "https://api.openai.com/v1/embeddings")
         .with(
           body: hash_including(
             "model" => "text-embedding-3-small",
-            "input" => ["Hello", "World"]
+            "input" => %w[Hello World]
           )
         )
     end
 
     it "returns embeddings in order" do
-      result = provider.compute(["Hello", "World"])
+      result = provider.compute(%w[Hello World])
 
       expect(result.size).to eq(2)
       expect(result[0]).to all(eq(0.1))
@@ -127,7 +132,7 @@ RSpec.describe Leann::Embedding::OpenAI do
           }.to_json
         )
 
-      result = provider.compute(["A", "B"])
+      result = provider.compute(%w[A B])
       expect(result).to eq([[0.1], [0.2]])
     end
   end
@@ -142,9 +147,9 @@ RSpec.describe Leann::Embedding::OpenAI do
           body: { error: { message: "Invalid input" } }.to_json
         )
 
-      expect {
+      expect do
         provider.compute(["test"])
-      }.to raise_error(Leann::EmbeddingError, /Invalid input/)
+      end.to raise_error(Leann::EmbeddingError, /Invalid input/)
     end
 
     it "raises EmbeddingError on parse failure" do
@@ -154,9 +159,9 @@ RSpec.describe Leann::Embedding::OpenAI do
           body: "not json"
         )
 
-      expect {
+      expect do
         provider.compute(["test"])
-      }.to raise_error(Leann::EmbeddingError, /parse/)
+      end.to raise_error(Leann::EmbeddingError, /parse/)
     end
 
     it "retries on rate limit" do
@@ -188,9 +193,9 @@ RSpec.describe Leann::Embedding::OpenAI do
 
       allow(provider).to receive(:sleep)
 
-      expect {
+      expect do
         provider.compute(["test"])
-      }.to raise_error(Leann::EmbeddingError, /retries/)
+      end.to raise_error(Leann::EmbeddingError, /retries/)
     end
   end
 end

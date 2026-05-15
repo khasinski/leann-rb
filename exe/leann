@@ -79,7 +79,7 @@ class CLI
     if results.empty?
       puts "No results found."
     else
-      puts results.to_s
+      puts results
     end
   end
 
@@ -107,7 +107,7 @@ class CLI
 
     name = args.first
     index = Leann.open(name)
-    puts index.to_s
+    puts index
   end
 
   def list_indexes

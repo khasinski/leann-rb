@@ -1,0 +1,54 @@
+AllCops:
+  TargetRubyVersion: 3.1
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - "bin/**/*"
+    - "spec/cassettes/**/*"
+    - "spec/tmp/**/*"
+    - "test_app/**/*"
+    - "benchmark/**/*"
+    - "vendor/**/*"
+    - "tmp/**/*"
+
+# Documentation is provided via YARD on public methods; don't force top-level docs everywhere.
+Style/Documentation:
+  Enabled: false
+
+# Library prints user-facing progress; some methods are legitimately verbose.
+Metrics/MethodLength:
+  Max: 40
+  Exclude:
+    - "spec/**/*"
+
+Metrics/AbcSize:
+  Max: 35
+
+Metrics/ClassLength:
+  Max: 250
+
+Metrics/ModuleLength:
+  Max: 200
+
+Metrics/BlockLength:
+  Exclude:
+    - "spec/**/*"
+    - "*.gemspec"
+
+Layout/LineLength:
+  Max: 120
+
+# We use `puts` deliberately in CLI / Builder progress reporting (routed through Leann.logger).
+Style/StderrPuts:
+  Enabled: false
+
+# Specs read naturally without trailing-period enforcement.
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: double_quotes
+
+Naming/AccessorMethodName:
+  Exclude:
+    - "lib/leann/backend/leann_graph.rb"

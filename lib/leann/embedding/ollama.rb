@@ -54,10 +54,9 @@ module Leann
         in_batches(texts, MAX_BATCH_SIZE) do |batch|
           batch_embeddings = compute_batch(batch)
           all_embeddings.concat(batch_embeddings)
-          print "." # Progress indicator
         end
 
-        puts " Done! (#{all_embeddings.size} embeddings)" unless texts.size < MAX_BATCH_SIZE
+        Leann.log("Embedded #{all_embeddings.size} texts via Ollama.") if texts.size >= MAX_BATCH_SIZE
 
         # Normalize embeddings (Ollama may not normalize by default)
         all_embeddings.map { |emb| normalize(emb) }
@@ -134,7 +133,7 @@ module Leann
         data = JSON.parse(response.body)
         embeddings = data["embeddings"]
 
-        unless embeddings && embeddings.is_a?(Array)
+        unless embeddings.is_a?(Array)
           raise EmbeddingError.new(
             "Invalid response from Ollama: missing embeddings",
             provider: :ollama

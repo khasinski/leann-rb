@@ -42,9 +42,9 @@ RSpec.describe Leann::Index do
     end
 
     it "raises for non-existent index" do
-      expect {
+      expect do
         described_class.open("nonexistent")
-      }.to raise_error(Leann::IndexNotFoundError)
+      end.to raise_error(Leann::IndexNotFoundError)
     end
   end
 

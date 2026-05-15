@@ -55,7 +55,7 @@ module Leann
           "  Embedding: #{embedding_provider}/#{embedding_model}",
           "  Dimensions: #{dimensions}",
           "  Backend: active_record",
-          "  Created: #{created_at&.strftime('%Y-%m-%d %H:%M:%S') || 'unknown'}"
+          "  Created: #{created_at&.strftime("%Y-%m-%d %H:%M:%S") || "unknown"}"
         ]
         lines.join("\n")
       end

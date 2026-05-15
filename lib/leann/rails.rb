@@ -25,9 +25,9 @@ module Leann
       #   end
       #
       # @return [Leann::Rails::Index] The built index record
-      def build(name, **options, &block)
+      def build(name, **options, &)
         builder = Builder.new(name, **options)
-        builder.instance_eval(&block) if block_given?
+        builder.instance_eval(&) if block_given?
         builder.save
       end
 
@@ -87,4 +87,4 @@ module Leann
   end
 end
 
-require "leann/rails/railtie" if defined?(::Rails::Railtie)
+require "leann/rails/railtie" if defined?(Rails::Railtie)

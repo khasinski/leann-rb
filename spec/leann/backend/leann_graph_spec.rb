@@ -37,7 +37,7 @@ RSpec.describe Leann::Backend::LeannGraph do
   end
 
   describe "#build" do
-    let(:ids) { ["doc1", "doc2", "doc3"] }
+    let(:ids) { %w[doc1 doc2 doc3] }
     let(:embeddings) do
       [
         Array.new(384) { rand(-1.0..1.0) },
@@ -55,9 +55,9 @@ RSpec.describe Leann::Backend::LeannGraph do
 
     it "raises on mismatched ids and embeddings" do
       graph = described_class.new(dimensions: 384)
-      expect {
+      expect do
         graph.build(ids, embeddings[0..1])
-      }.to raise_error(ArgumentError, /same length/)
+      end.to raise_error(ArgumentError, /same length/)
     end
 
     it "handles empty input" do
@@ -83,7 +83,7 @@ RSpec.describe Leann::Backend::LeannGraph do
   end
 
   describe "#save and .load" do
-    let(:ids) { ["doc1", "doc2", "doc3", "doc4", "doc5"] }
+    let(:ids) { %w[doc1 doc2 doc3 doc4 doc5] }
     let(:embeddings) do
       ids.map { Array.new(384) { rand(-1.0..1.0) } }
     end
@@ -132,14 +132,14 @@ RSpec.describe Leann::Backend::LeannGraph do
     end
 
     it "raises on missing file" do
-      expect {
+      expect do
         described_class.load("nonexistent")
-      }.to raise_error(Leann::IndexNotFoundError)
+      end.to raise_error(Leann::IndexNotFoundError)
     end
   end
 
   describe "#search" do
-    let(:ids) { ["ruby", "python", "javascript", "go", "rust"] }
+    let(:ids) { %w[ruby python javascript go rust] }
     let(:texts) do
       {
         "ruby" => "Ruby is a dynamic programming language",
@@ -154,23 +154,23 @@ RSpec.describe Leann::Backend::LeannGraph do
       double("EmbeddingProvider").tap do |provider|
         allow(provider).to receive(:compute_one) do |text|
           # Simple hash-based mock embedding
-          Array.new(384) { |i| (text.bytes.sum + i) % 256 / 256.0 - 0.5 }
+          Array.new(384) { |i| ((text.bytes.sum + i) % 256 / 256.0) - 0.5 }
         end
         allow(provider).to receive(:compute) do |texts|
-          texts.map { |t| Array.new(384) { |i| (t.bytes.sum + i) % 256 / 256.0 - 0.5 } }
+          texts.map { |t| Array.new(384) { |i| ((t.bytes.sum + i) % 256 / 256.0) - 0.5 } }
         end
       end
     end
 
     let(:embeddings) do
-      texts.values.map { |t| Array.new(384) { |i| (t.bytes.sum + i) % 256 / 256.0 - 0.5 } }
+      texts.values.map { |t| Array.new(384) { |i| ((t.bytes.sum + i) % 256 / 256.0) - 0.5 } }
     end
 
     it "returns search results" do
       graph = described_class.new(dimensions: 384)
       graph.build(ids, embeddings)
 
-      query_embedding = Array.new(384) { |i| ("Ruby language".bytes.sum + i) % 256 / 256.0 - 0.5 }
+      query_embedding = Array.new(384) { |i| (("Ruby language".bytes.sum + i) % 256 / 256.0) - 0.5 }
 
       results = graph.search(
         query_embedding,
@@ -217,7 +217,7 @@ RSpec.describe Leann::Backend::LeannGraph do
   end
 
   describe "#get_neighbors" do
-    let(:ids) { ["a", "b", "c"] }
+    let(:ids) { %w[a b c] }
     let(:embeddings) do
       ids.map { Array.new(384) { rand(-1.0..1.0) } }
     end
@@ -247,7 +247,7 @@ RSpec.describe Leann::Backend::LeannGraph do
   end
 
   describe "#get_id / #get_idx" do
-    let(:ids) { ["doc_a", "doc_b", "doc_c"] }
+    let(:ids) { %w[doc_a doc_b doc_c] }
     let(:embeddings) do
       ids.map { Array.new(384) { rand(-1.0..1.0) } }
     end

@@ -77,7 +77,7 @@ module Leann
           "#{path}#{OFFSETS_SUFFIX}",
           "#{path}#{VECTORS_SUFFIX}",
           "#{path}#{IDS_SUFFIX}",
-          "#{path}.graph.bin",     # LEANN graph file
+          "#{path}.graph.bin", # LEANN graph file
           "#{path}.graph.meta.json" # LEANN graph metadata
         ]
 

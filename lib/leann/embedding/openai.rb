@@ -32,7 +32,7 @@ module Leann
       def initialize(model: "text-embedding-3-small", api_key: nil, base_url: nil)
         super(model: model)
 
-        @api_key = api_key || Leann.configuration.openai_api_key || ENV["OPENAI_API_KEY"]
+        @api_key = api_key || Leann.configuration.openai_api_key || ENV.fetch("OPENAI_API_KEY", nil)
         @base_url = base_url || Leann.configuration.openai_base_url || BASE_URL
         @dimensions = DIMENSIONS[model]
 
@@ -51,10 +51,9 @@ module Leann
         in_batches(texts, MAX_BATCH_SIZE) do |batch|
           batch_embeddings = compute_batch(batch)
           all_embeddings.concat(batch_embeddings)
-          print "." # Progress indicator
         end
 
-        puts " Done! (#{all_embeddings.size} embeddings)" unless texts.size < MAX_BATCH_SIZE
+        Leann.log("Embedded #{all_embeddings.size} texts via OpenAI.") if texts.size >= MAX_BATCH_SIZE
 
         all_embeddings
       end

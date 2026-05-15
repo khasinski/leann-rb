@@ -115,8 +115,8 @@ module Leann
     end
 
     # Iterate over results
-    def each(&block)
-      results.each(&block)
+    def each(&)
+      results.each(&)
     end
 
     # Number of results
@@ -179,7 +179,7 @@ module Leann
     def to_s
       lines = ["Search results for: #{query.inspect}"]
       lines << "Found #{size} results in #{format("%.3f", duration || 0)}s"
-      lines << "-" * 60
+      lines << ("-" * 60)
       results.each_with_index do |r, i|
         lines << "#{i + 1}. #{r}"
       end

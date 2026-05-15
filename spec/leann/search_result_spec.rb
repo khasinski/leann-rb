@@ -118,8 +118,7 @@ RSpec.describe Leann::SearchResults do
 
   describe "#each" do
     it "iterates over results" do
-      texts = []
-      search_results.each { |r| texts << r.text }
+      texts = search_results.map(&:text)
       expect(texts).to eq(["First document", "Second document", "Third document"])
     end
 

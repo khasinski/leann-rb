@@ -15,10 +15,10 @@ module RubyLLM
   class << self
     attr_accessor :mock_vectors, :should_raise
 
-    def embed(texts, **options)
+    def embed(texts, **_options)
       raise Error, "Mock error" if should_raise
 
-      vectors = texts.map do |text|
+      vectors = texts.map do |_text|
         mock_vectors || Array.new(1536) { rand(-1.0..1.0) }
       end
       EmbeddingResult.new(vectors)
@@ -68,7 +68,7 @@ RSpec.describe Leann::Embedding::RubyLLM do
     end
 
     it "handles multiple texts" do
-      result = provider.compute(["One", "Two", "Three"])
+      result = provider.compute(%w[One Two Three])
 
       expect(result.size).to eq(3)
     end
@@ -82,9 +82,9 @@ RSpec.describe Leann::Embedding::RubyLLM do
     it "raises EmbeddingError on RubyLLM error" do
       RubyLLM.should_raise = true
 
-      expect {
+      expect do
         provider.compute(["test"])
-      }.to raise_error(Leann::EmbeddingError, /RubyLLM embedding failed/)
+      end.to raise_error(Leann::EmbeddingError, /RubyLLM embedding failed/)
     end
   end
 

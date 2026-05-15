@@ -63,7 +63,7 @@ RSpec.describe Leann::Rails do
       Leann::Rails::Index.create!(name: "index_a", embedding_provider: "openai", dimensions: 1536)
       Leann::Rails::Index.create!(name: "index_b", embedding_provider: "openai", dimensions: 1536)
 
-      expect(described_class.list).to eq(["index_a", "index_b"])
+      expect(described_class.list).to eq(%w[index_a index_b])
     end
   end
 

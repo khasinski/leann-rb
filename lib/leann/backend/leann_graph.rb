@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
+require "set"
 
 module Leann
   module Backend
@@ -16,17 +17,16 @@ module Leann
     #
     class LeannGraph
       # HNSW parameters
-      DEFAULT_M = 16           # Max connections per layer
-      DEFAULT_EF_CONSTRUCTION = 200  # Build-time search width
-      DEFAULT_ML = 1.0 / Math.log(DEFAULT_M)  # Level multiplier
+      DEFAULT_M = 16 # Max connections per layer
+      DEFAULT_EF_CONSTRUCTION = 200 # Build-time search width
+      DEFAULT_ML = 1.0 / Math.log(DEFAULT_M) # Level multiplier
 
-      attr_reader :dimensions, :m, :ef_construction, :max_level, :entry_point
-      attr_reader :node_count
+      attr_reader :dimensions, :m, :ef_construction, :max_level, :entry_point, :node_count
 
       def initialize(dimensions:, m: DEFAULT_M, ef_construction: DEFAULT_EF_CONSTRUCTION)
         @dimensions = dimensions
         @m = m
-        @m0 = m * 2  # Layer 0 has 2x connections
+        @m0 = m * 2 # Layer 0 has 2x connections
         @ef_construction = ef_construction
         @ml = 1.0 / Math.log(m)
 
@@ -49,7 +49,7 @@ module Leann
         return self if ids.empty?
 
         @node_count = ids.length
-        puts "Building LEANN graph with #{@node_count} nodes (M=#{@m})..."
+        Leann.log("Building LEANN graph with #{@node_count} nodes (M=#{@m})...")
 
         ids.each_with_index do |id, idx|
           level = random_level
@@ -65,10 +65,10 @@ module Leann
             insert_node(idx, embeddings[idx], embeddings, level)
           end
 
-          print "." if (idx + 1) % 100 == 0
+          Leann.log("  ...inserted #{idx + 1}/#{@node_count} nodes") if ((idx + 1) % 1000).zero?
         end
 
-        puts "\nGraph built: #{@node_count} nodes, max_level=#{@max_level}"
+        Leann.log("Graph built: #{@node_count} nodes, max_level=#{@max_level}")
         self
       end
 
@@ -95,16 +95,16 @@ module Leann
         # Save graph in binary format
         File.open(graph_file, "wb") do |f|
           # Header
-          f.write([@node_count].pack("Q<"))  # uint64 node count
+          f.write([@node_count].pack("Q<")) # uint64 node count
 
           # Node levels
           levels = @nodes.map { |n| n[:level] }
-          f.write(levels.pack("l<*"))  # int32 array
+          f.write(levels.pack("l<*")) # int32 array
 
           # Node IDs (as length-prefixed strings)
           @nodes.each do |node|
             id_bytes = node[:id].to_s.encode("UTF-8")
-            f.write([id_bytes.bytesize].pack("S<"))  # uint16 length
+            f.write([id_bytes.bytesize].pack("S<")) # uint16 length
             f.write(id_bytes)
           end
 
@@ -118,9 +118,9 @@ module Leann
               current_offset += level_neighbors.length
             end
           end
-          offsets << current_offset  # Final offset
+          offsets << current_offset # Final offset
 
-          f.write(offsets.pack("Q<*"))  # uint64 array
+          f.write(offsets.pack("Q<*")) # uint64 array
 
           # Level offsets within each node
           level_offsets = []
@@ -130,7 +130,7 @@ module Leann
               level_offsets << level_offset
               level_offset += level_neighbors.length
             end
-            level_offsets << level_offset  # End marker for this node
+            level_offsets << level_offset # End marker for this node
           end
           f.write([level_offsets.length].pack("Q<"))
           f.write(level_offsets.pack("Q<*"))
@@ -138,11 +138,11 @@ module Leann
           # All neighbor indices (flattened)
           all_neighbors = @neighbors.flat_map { |nn| nn.flat_map { |ln| ln } }
           f.write([all_neighbors.length].pack("Q<"))
-          f.write(all_neighbors.pack("l<*"))  # int32 array
+          f.write(all_neighbors.pack("l<*")) # int32 array
         end
 
         graph_size = File.size(graph_file)
-        puts "Graph saved: #{format_bytes(graph_size)} (no embeddings stored!)"
+        Leann.log("Graph saved: #{format_bytes(graph_size)} (no embeddings stored!)")
       end
 
       # Load graph from files
@@ -211,7 +211,7 @@ module Leann
             node_neighbors = []
             base_offset = offsets[idx]
 
-            (node_level + 1).times do |level|
+            (node_level + 1).times do |_level|
               start_off = level_offsets[level_offset_idx]
               end_off = level_offsets[level_offset_idx + 1]
               level_offset_idx += 1
@@ -219,13 +219,13 @@ module Leann
               level_neighbors = all_neighbors[(base_offset + start_off)...(base_offset + end_off)]
               node_neighbors << (level_neighbors || [])
             end
-            level_offset_idx += 1  # Skip end marker
+            level_offset_idx += 1 # Skip end marker
 
             @neighbors << node_neighbors
           end
         end
 
-        puts "Graph loaded: #{@node_count} nodes, max_level=#{@max_level}"
+        Leann.log("Graph loaded: #{@node_count} nodes, max_level=#{@max_level}")
       end
 
       # Search the graph using on-the-fly embedding computation
@@ -249,7 +249,7 @@ module Leann
         current_dist = distance(query_embedding, get_embedding(current, embedding_provider, passages, embedding_cache))
 
         # Greedy search from top layer down to layer 1
-        (@max_level).downto(1) do |level|
+        @max_level.downto(1) do |level|
           changed = true
           while changed
             changed = false
@@ -257,11 +257,11 @@ module Leann
             neighbors.each do |neighbor|
               neighbor_emb = get_embedding(neighbor, embedding_provider, passages, embedding_cache)
               neighbor_dist = distance(query_embedding, neighbor_emb)
-              if neighbor_dist < current_dist
-                current = neighbor
-                current_dist = neighbor_dist
-                changed = true
-              end
+              next unless neighbor_dist < current_dist
+
+              current = neighbor
+              current_dist = neighbor_dist
+              changed = true
             end
           end
         end
@@ -273,13 +273,14 @@ module Leann
         candidates
           .sort_by { |_, dist| dist }
           .first(limit)
-          .map { |idx, dist| [@nodes[idx][:id], 1.0 - dist] }  # Convert distance to similarity
+          .map { |idx, dist| [@nodes[idx][:id], 1.0 - dist] } # Convert distance to similarity
       end
 
       # Get neighbors at a specific level
       def get_neighbors(node_idx, level)
         return [] if node_idx >= @neighbors.length
         return [] if level >= @neighbors[node_idx].length
+
         @neighbors[node_idx][level] || []
       end
 
@@ -297,9 +298,7 @@ module Leann
 
       def random_level
         level = 0
-        while rand < (1.0 / @m) && level < 32
-          level += 1
-        end
+        level += 1 while rand < (1.0 / @m) && level < 32
         level
       end
 
@@ -315,7 +314,8 @@ module Leann
         end
         norm_a = Math.sqrt(norm_a)
         norm_b = Math.sqrt(norm_b)
-        return 1.0 if norm_a == 0 || norm_b == 0
+        return 1.0 if norm_a.zero? || norm_b.zero?
+
         1.0 - (dot / (norm_a * norm_b))
       end
 
@@ -337,17 +337,17 @@ module Leann
         ep_dist = distance(embedding, all_embeddings[ep])
 
         # Traverse from top to insertion level + 1
-        (@max_level).downto(level + 1) do |lc|
+        @max_level.downto(level + 1) do |lc|
           changed = true
           while changed
             changed = false
             get_neighbors(ep, lc).each do |neighbor|
               d = distance(embedding, all_embeddings[neighbor])
-              if d < ep_dist
-                ep = neighbor
-                ep_dist = d
-                changed = true
-              end
+              next unless d < ep_dist
+
+              ep = neighbor
+              ep_dist = d
+              changed = true
             end
           end
         end
@@ -355,7 +355,7 @@ module Leann
         # Insert at each level from insertion level down to 0
         [level, @max_level].min.downto(0) do |lc|
           # Search for closest neighbors at this level
-          max_neighbors = lc == 0 ? @m0 : @m
+          max_neighbors = lc.zero? ? @m0 : @m
 
           candidates = search_layer_build(embedding, ep, @ef_construction, lc, all_embeddings)
           neighbors = select_neighbors(embedding, candidates, max_neighbors, all_embeddings)
@@ -385,10 +385,10 @@ module Leann
         end
 
         # Update entry point if needed
-        if level > @max_level
-          @entry_point = idx
-          @max_level = level
-        end
+        return unless level > @max_level
+
+        @entry_point = idx
+        @max_level = level
       end
 
       def search_layer_build(query_emb, entry_point, ef, level, all_embeddings)
@@ -407,16 +407,17 @@ module Leann
           # Explore neighbors
           get_neighbors(current, level).each do |neighbor|
             next if visited.include?(neighbor)
+
             visited.add(neighbor)
 
             neighbor_dist = distance(query_emb, all_embeddings[neighbor])
 
-            if results.length < ef || neighbor_dist < results.last[1]
-              candidates << [neighbor, neighbor_dist]
-              results << [neighbor, neighbor_dist]
-              results.sort_by! { |_, d| d }
-              results.pop if results.length > ef
-            end
+            next unless results.length < ef || neighbor_dist < results.last[1]
+
+            candidates << [neighbor, neighbor_dist]
+            results << [neighbor, neighbor_dist]
+            results.sort_by! { |_, d| d }
+            results.pop if results.length > ef
           end
         end
 
@@ -437,24 +438,25 @@ module Leann
 
           get_neighbors(current, level).each do |neighbor|
             next if visited.include?(neighbor)
+
             visited.add(neighbor)
 
             neighbor_emb = get_embedding(neighbor, embedding_provider, passages, cache)
             neighbor_dist = distance(query_emb, neighbor_emb)
 
-            if results.length < ef || neighbor_dist < results.last[1]
-              candidates << [neighbor, neighbor_dist]
-              results << [neighbor, neighbor_dist]
-              results.sort_by! { |_, d| d }
-              results.pop if results.length > ef
-            end
+            next unless results.length < ef || neighbor_dist < results.last[1]
+
+            candidates << [neighbor, neighbor_dist]
+            results << [neighbor, neighbor_dist]
+            results.sort_by! { |_, d| d }
+            results.pop if results.length > ef
           end
         end
 
         results
       end
 
-      def select_neighbors(query_emb, candidates, max_count, all_embeddings)
+      def select_neighbors(_query_emb, candidates, max_count, _all_embeddings)
         # Simple selection: take closest
         candidates
           .sort_by { |_, d| d.is_a?(Array) ? d[1] : d }

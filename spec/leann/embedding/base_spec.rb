@@ -16,9 +16,9 @@ RSpec.describe Leann::Embedding::Base do
   describe "#compute" do
     it "raises NotImplementedError" do
       provider = described_class.new(model: "test")
-      expect {
+      expect do
         provider.compute(["text"])
-      }.to raise_error(NotImplementedError, /must implement/)
+      end.to raise_error(NotImplementedError, /must implement/)
     end
   end
 
@@ -36,7 +36,7 @@ RSpec.describe Leann::Embedding::Base do
     let(:provider) { described_class.new(model: "test") }
 
     it "normalizes vector to unit length" do
-      embedding = [3.0, 4.0]  # 3-4-5 triangle
+      embedding = [3.0, 4.0] # 3-4-5 triangle
       normalized = provider.send(:normalize, embedding)
 
       expect(normalized).to eq([0.6, 0.8])
@@ -70,11 +70,11 @@ RSpec.describe Leann::Embedding::Base do
       end
 
       expect(batches).to eq([
-        [1, 2, 3],
-        [4, 5, 6],
-        [7, 8, 9],
-        [10]
-      ])
+                              [1, 2, 3],
+                              [4, 5, 6],
+                              [7, 8, 9],
+                              [10]
+                            ])
     end
 
     it "handles empty array" do

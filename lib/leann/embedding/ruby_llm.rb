@@ -16,11 +16,11 @@ module Leann
     class RubyLLM < Base
       # @param model [String, nil] Embedding model (uses RubyLLM default if nil)
       def initialize(model: nil)
-        super(model: model)
+        super
 
-        unless defined?(::RubyLLM)
-          raise ConfigurationError, "RubyLLM gem is required. Add 'ruby_llm' to your Gemfile."
-        end
+        return if defined?(::RubyLLM)
+
+        raise ConfigurationError, "RubyLLM gem is required. Add 'ruby_llm' to your Gemfile."
       end
 
       # Compute embeddings for texts

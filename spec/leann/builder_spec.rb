@@ -54,18 +54,18 @@ RSpec.describe Leann::Builder do
       FileUtils.mkdir_p("#{index_name}.leann")
       File.write("#{index_name}.leann.meta.json", "{}")
 
-      expect {
+      expect do
         described_class.new(index_name)
-      }.to raise_error(Leann::IndexExistsError)
+      end.to raise_error(Leann::IndexExistsError)
     end
 
     it "allows force overwrite" do
       FileUtils.mkdir_p("#{index_name}.leann")
       File.write("#{index_name}.leann.meta.json", "{}")
 
-      expect {
+      expect do
         described_class.new(index_name, force: true)
-      }.not_to raise_error
+      end.not_to raise_error
     end
   end
 
@@ -155,9 +155,9 @@ RSpec.describe Leann::Builder do
     end
 
     it "raises if file not found" do
-      expect {
+      expect do
         builder.add_file("nonexistent.txt")
-      }.to raise_error(ArgumentError, /not found/)
+      end.to raise_error(ArgumentError, /not found/)
     end
   end
 
@@ -182,9 +182,9 @@ RSpec.describe Leann::Builder do
     end
 
     it "raises if directory not found" do
-      expect {
+      expect do
         builder.add_directory("nonexistent/")
-      }.to raise_error(ArgumentError, /not found/)
+      end.to raise_error(ArgumentError, /not found/)
     end
   end
 
@@ -192,15 +192,15 @@ RSpec.describe Leann::Builder do
     subject(:builder) { described_class.new(index_name) }
 
     it "adds array of strings" do
-      builder.add_all(["One", "Two", "Three"])
+      builder.add_all(%w[One Two Three])
       expect(builder.count).to eq(3)
     end
 
     it "adds array of hashes" do
       builder.add_all([
-        { text: "First", source: "a" },
-        { text: "Second", source: "b" }
-      ])
+                        { text: "First", source: "a" },
+                        { text: "Second", source: "b" }
+                      ])
       expect(builder.count).to eq(2)
       expect(builder.documents.first[:metadata][:source]).to eq("a")
     end
@@ -270,6 +270,5 @@ RSpec.describe Leann::Builder do
         expect(meta["backend"]).to eq("leann")
       end
     end
-
   end
 end

@@ -71,9 +71,9 @@ RSpec.describe Leann::Embedding::Ollama do
       stub_request(:get, "http://localhost:11434/api/version")
         .to_timeout
 
-      expect {
+      expect do
         described_class.new
-      }.to raise_error(Leann::EmbeddingError, /Cannot connect/)
+      end.to raise_error(Leann::EmbeddingError, /Cannot connect/)
     end
   end
 
@@ -100,25 +100,25 @@ RSpec.describe Leann::Embedding::Ollama do
     end
 
     it "makes request to Ollama API" do
-      provider.compute(["Hello", "World"])
+      provider.compute(%w[Hello World])
 
       expect(WebMock).to have_requested(:post, "http://localhost:11434/api/embed")
         .with(
           body: hash_including(
             "model" => "nomic-embed-text",
-            "input" => ["Hello", "World"]
+            "input" => %w[Hello World]
           )
         )
     end
 
     it "returns embeddings" do
-      result = provider.compute(["Hello", "World"])
+      result = provider.compute(%w[Hello World])
 
       expect(result.size).to eq(2)
     end
 
     it "normalizes embeddings" do
-      result = provider.compute(["Hello", "World"])
+      result = provider.compute(%w[Hello World])
 
       result.each do |embedding|
         norm = Math.sqrt(embedding.sum { |x| x * x })
@@ -134,9 +134,9 @@ RSpec.describe Leann::Embedding::Ollama do
       stub_request(:post, "http://localhost:11434/api/embed")
         .to_return(status: 404, body: "model not found")
 
-      expect {
+      expect do
         provider.compute(["test"])
-      }.to raise_error(Leann::EmbeddingError, /not found/)
+      end.to raise_error(Leann::EmbeddingError, /not found/)
     end
 
     it "raises EmbeddingError on API error" do
@@ -146,9 +146,9 @@ RSpec.describe Leann::Embedding::Ollama do
           body: { error: "internal error" }.to_json
         )
 
-      expect {
+      expect do
         provider.compute(["test"])
-      }.to raise_error(Leann::EmbeddingError, /error/)
+      end.to raise_error(Leann::EmbeddingError, /error/)
     end
 
     it "raises EmbeddingError on invalid response" do
@@ -158,9 +158,9 @@ RSpec.describe Leann::Embedding::Ollama do
           body: { embeddings: nil }.to_json
         )
 
-      expect {
+      expect do
         provider.compute(["test"])
-      }.to raise_error(Leann::EmbeddingError, /Invalid response/)
+      end.to raise_error(Leann::EmbeddingError, /Invalid response/)
     end
 
     it "raises EmbeddingError on count mismatch" do
@@ -170,18 +170,18 @@ RSpec.describe Leann::Embedding::Ollama do
           body: { embeddings: [[0.1]] }.to_json
         )
 
-      expect {
-        provider.compute(["one", "two"])
-      }.to raise_error(Leann::EmbeddingError, /expected 2/)
+      expect do
+        provider.compute(%w[one two])
+      end.to raise_error(Leann::EmbeddingError, /expected 2/)
     end
 
     it "raises EmbeddingError on parse failure" do
       stub_request(:post, "http://localhost:11434/api/embed")
         .to_return(status: 200, body: "not json")
 
-      expect {
+      expect do
         provider.compute(["test"])
-      }.to raise_error(Leann::EmbeddingError, /parse/)
+      end.to raise_error(Leann::EmbeddingError, /parse/)
     end
   end
 end

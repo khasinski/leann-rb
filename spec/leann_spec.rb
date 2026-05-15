@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe Leann do
   it "has a version number" do
     expect(Leann::VERSION).not_to be_nil
