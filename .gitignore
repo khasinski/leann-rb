@@ -15,6 +15,3 @@
 
 # Index files created during testing
 *.leann*
-
-# Built gem artifacts
-*.gem

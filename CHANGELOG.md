@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-15
+
 ### Changed
 - Minimum Ruby bumped to 3.1 (3.0 is EOL).
 - Builder output is now routed through `Leann.logger`; set `Leann.configuration.verbose = false` (or assign a custom logger) to silence progress messages.
